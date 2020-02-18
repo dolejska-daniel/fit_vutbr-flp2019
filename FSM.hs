@@ -2,9 +2,9 @@ module FSM (
     Alphabet(Alphabet),
     State,
     States(States),
-    Delta,
     Rule,
     Rules(Rules),
+    Delta,
     FSM(FSM),
     ) where
 
@@ -20,8 +20,13 @@ module FSM (
             s (x:xs) = show x ++ "," ++ s xs
             s _ = ""
     instance Read States where
-        readsPrec _ (state:',':states) = []
-        readsPrec _ _ = []
+        readsPrec _ str = [parse str "" []] where
+            parse :: String -> String -> [Integer] -> (States, String)
+            parse (',':xs) str stateAcc = parse xs "" (addAsInt stateAcc str)
+            parse (x:xs) str stateAcc = parse xs (str ++ [x]) stateAcc
+            parse x str stateAcc = (States (addAsInt stateAcc str), x)
+            addAsInt :: [Integer] -> String -> [Integer]
+            addAsInt l str = l ++ [(read str :: Integer)]
     
     type Rule = (State, Maybe Char, State)
     data Rules = Rules [Rule]

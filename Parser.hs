@@ -12,16 +12,16 @@ module Parser (
               (delta, deltaRules) = parseDelta source
     
     parseStates :: [String] -> States
-    parseStates source = States [0, 1, 2]
+    parseStates source = read $ source !! 0
     
     parseAlphabet :: [String] -> Alphabet
-    parseAlphabet _ = Alphabet "abcde"
+    parseAlphabet source = Alphabet $ source !! 1
     
     parseStartState :: [String] -> State
-    parseStartState _ = 0 :: State
+    parseStartState source = read $ source !! 2
     
     parseAcceptStates :: [String] -> States
-    parseAcceptStates _ = States [1, 2]
+    parseAcceptStates source = read $ source !! 3
     
     parseDelta :: [String] -> (Delta, Rules)
     parseDelta _ = (delta, Rules [(0, Just 'x', 0)]) where
