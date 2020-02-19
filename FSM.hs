@@ -2,11 +2,12 @@ module FSM (
     Alphabet(Alphabet),
     State,
     States(States),
-    Rule,
+    Rule(Rule),
     Rules(Rules),
     Delta,
     FSM(FSM),
     ) where
+    import Utils
 
     newtype Alphabet = Alphabet [Char]
     instance Show Alphabet where
@@ -22,21 +23,33 @@ module FSM (
     instance Read States where
         readsPrec _ str = [parse str "" []] where
             parse :: String -> String -> [Integer] -> (States, String)
-            parse (',':xs) str stateAcc = parse xs "" (addAsInt stateAcc str)
-            parse (x:xs) str stateAcc = parse xs (str ++ [x]) stateAcc
-            parse x str stateAcc = (States (addAsInt stateAcc str), x)
-            addAsInt :: [Integer] -> String -> [Integer]
-            addAsInt l str = l ++ [(read str :: Integer)]
+            parse (',':xs) str acc = parse xs "" (appendAs acc str)
+            parse (x:xs) str acc = parse xs (str ++ [x]) acc
+            parse x str acc = (States (appendAs acc str), x)
     
-    type Rule = (State, Maybe Char, State)
+    newtype Rule = Rule (State, Maybe Char, State)
+    instance Show Rule where
+        show (Rule rule) = s rule where
+            s :: (State, Maybe Char, State) -> String
+            s (s1, Just a, s2) = show s1 ++ "," ++ [a] ++ "," ++ show s2
+            s (s1, _, s2) = show s1 ++ ",," ++ show s2
+    instance Read Rule where
+        readsPrec _ str = [parse str "" Nothing []] where
+            parse :: String -> String -> Maybe Char -> [Integer] -> (Rule, String)
+            parse (',':x:',':xs) str c acc = parse xs "" (Just x) (appendAs acc str)
+            parse (',':',':xs) str c acc = parse xs "" Nothing (appendAs acc str)
+            parse (x:xs) str c acc = parse xs (str ++ [x]) c acc
+            parse x str c acc = (Rule $ toTuple (appendAs acc str) c, x)
+            toTuple :: [Integer] -> Maybe Char -> (Integer, Maybe Char, Integer)
+            toTuple ints char = (ints !! 0, char, ints !! 1)
+
     data Rules = Rules [Rule]
     instance Show Rules where
         show (Rules list) = s list where
-            s (x:[]) = s' x
-            s (x:xs) = s' x ++ "\n" ++ s xs
+            s :: [Rule] -> String
+            s (x:[]) = show x
+            s (x:xs) = show x ++ "\n" ++ s xs
             s _ = ""
-            s' (s1, Just a, s2) = show s1 ++ "," ++ [a] ++ "," ++ show s2
-            s' (s1, Nothing, s2) = show s1 ++ ",," ++ show s2
 
     type Delta = State -> Char -> States
     
