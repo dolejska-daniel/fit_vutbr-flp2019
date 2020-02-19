@@ -36,6 +36,7 @@ module Utils (
 
     indexOf :: Eq a => [a] -> a -> Integer
     indexOf x y = next x y 0 where
+        next [] y _ = error "Trying to find index of nonexistent element."
         next (x:xs) y i
             | x == y = i
             | otherwise = next xs y (i + 1)

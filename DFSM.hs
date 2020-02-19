@@ -8,7 +8,7 @@ module DFSM (
     detDelta,
     detStateTransition,
     detTransition,
-    -- toDFSM,
+    toDFSM,
     ) where
     import Utils
     import FSM
@@ -30,8 +30,8 @@ module DFSM (
     type CompositeState = [State]
     type CompositeRule = (CompositeState, Input, CompositeState)
 
-    simplifyCompositeStates :: [CompositeState] -> States
-    simplifyCompositeStates states = States $ map (simplifyCompositeState states) states
+    simplifyCompositeStates :: [CompositeState] -> [CompositeState] -> States
+    simplifyCompositeStates states states' = States $ map (simplifyCompositeState states) states'
 
     simplifyCompositeState :: [CompositeState] -> CompositeState -> State
     simplifyCompositeState states s = indexOf states s
@@ -43,33 +43,33 @@ module DFSM (
     simplifyCompositeRule states (from, by, to) = Rule (indexOf states from, by, indexOf states to)
 
     -- |Converts provided FSM to its deterministic variant.
-    {--
     toDFSM :: FSM -> FSM
     toDFSM fsm = FSM states' alphabet' delta' deltaRules' startState' acceptStates'
-        where states' = States []
-              alphabet' = Alphabet []
-              startState' = epsilonClosure (delta fsm) [(startState fsm)]
-              acceptStates' = States []
-              (delta', deltaRules') = deterministicDelta startState'
-              --}
-    
-    -- det :: Delta -> Alphabet -> [State] -> [[State]]
+        where alphabet' = sigma fsm
+              startState' = unStates states' !! 0
+              (states', acceptStates', delta', deltaRules') = detDelta fsm
 
-    detDelta :: FSM -> (States, Delta, Rules)
+    detDelta :: FSM -> (States, States, Delta, Rules)
     detDelta fsm =
         let d = (delta fsm)
             ss = [(startState fsm)]
             s = (sigma fsm)
             initState = epsilonClosure d ss
         in init d initState s where
-            init :: Delta -> CompositeState -> Alphabet -> (States, Delta, Rules)
+            init :: Delta -> CompositeState -> Alphabet -> (States, States, Delta, Rules)
             init d ss s = next d ss s [ss] [] []
             next d ss s stateAcc closedStateAcc ruleAcc
                 -- | All states were processed.
                 | stateAcc == closedStateAcc =
-                    let states = simplifyCompositeStates stateAcc
+                    let states = simplifyCompositeStates stateAcc stateAcc
+                        acceptStates' = States $ init $ map (intersection $ unStates $ acceptStates fsm) stateAcc where
+                            init states = next states 0 []
+                            next [] _ acc = acc
+                            next (x:xs) i acc
+                                | x /= [] = next xs (i + 1) (acc ++ [i])
+                                | otherwise = next xs (i + 1) acc
                         rules = simplifyCompositeRules stateAcc ruleAcc
-                    in (states, newDelta rules, rules)
+                    in (states, acceptStates', newDelta rules, rules)
                 -- | Current state was not processed.
                 | not $ contains closedStateAcc ss =
                     -- | Calculate new values for next iteration.

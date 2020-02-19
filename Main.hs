@@ -1,4 +1,5 @@
 import System.Environment
+import Control.Monad
 import Cli
 import Parser
 import FSM
@@ -10,15 +11,6 @@ main = do
     input <- getInput args
     let source = lines input
     let fsm = parseFSM source
-    print fsm
-    let firstClosure = epsilonClosure (delta fsm) [(startState fsm)]
-    print "==="
-    print firstClosure
-    print $ deltaClosure (delta fsm) firstClosure (Just 'a')
-    print $ deltaClosure (delta fsm) firstClosure (Just 'b')
-    print "==="
-    print $ detStateTransition (delta fsm) firstClosure (sigma fsm)
-    print $ detTransition (delta fsm) firstClosure (Just 'a')
-    print "==="
-    print $ transitionTo $ detDelta fsm
+    when (isOptionPresent 'i' args) $ print fsm
+    when (isOptionPresent 't' args) $ print $ toDFSM fsm
     return ()
