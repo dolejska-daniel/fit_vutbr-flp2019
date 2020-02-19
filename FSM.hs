@@ -2,10 +2,18 @@ module FSM (
     Alphabet(Alphabet),
     State,
     States(States),
+    unStates,
     Rule(Rule),
     Rules(Rules),
+    unRules,
     Delta,
     FSM(FSM),
+    states,
+    sigma,
+    delta,
+    startState,
+    acceptStates,
+    newDelta,
     ) where
     import Utils
 
@@ -26,6 +34,9 @@ module FSM (
             parse (',':xs) str acc = parse xs "" (appendAs acc str)
             parse (x:xs) str acc = parse xs (str ++ [x]) acc
             parse x str acc = (States (appendAs acc str), x)
+    
+    unStates :: States -> [State]
+    unStates (States states) = states
     
     newtype Rule = Rule (State, Maybe Char, State)
     instance Show Rule where
@@ -50,8 +61,14 @@ module FSM (
             s (x:[]) = show x
             s (x:xs) = show x ++ "\n" ++ s xs
             s _ = ""
+    
+    unRules :: Rules -> [Rule]
+    unRules (Rules rules) = rules
 
-    type Delta = State -> Char -> States
+    type Delta = State -> Maybe Char -> States
+
+    newDelta :: Rules -> Delta
+    newDelta rules state input = States [ s | Rule (s0, i, s) <- unRules rules, s0 == state, i == input ]
     
     data FSM = FSM {
         states :: States,

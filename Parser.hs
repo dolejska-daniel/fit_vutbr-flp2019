@@ -30,13 +30,10 @@ module Parser (
     
     -- |Parses rules and transition function from source.
     parseDelta :: [String] -> (Delta, Rules)
-    parseDelta source = createTuple $ Rules $ parseRules' source where
-        createTuple rules = (delta rules, rules)
-        -- | Actual delta function
-        -- TODO: IMPLEMENT
-        delta rules a b = States []
+    parseDelta source = createTuple $ Rules $ parseRules source where
+        createTuple rules = (newDelta rules, rules)
         -- | Initial parse function
-        parseRules' source = parseRules (drop 4 source) []
+        parseRules source = parseRules' (drop 4 source) []
         -- | Rule parsing
-        parseRules (x:xs) acc = parseRules xs ((read x :: Rule) : acc)
-        parseRules _ acc = reverse acc
+        parseRules' (x:xs) acc = parseRules' xs ((read x :: Rule) : acc)
+        parseRules' _ acc = reverse acc
