@@ -18,7 +18,7 @@ module Parser (
     
     -- |Parses input alphabet from source.
     parseAlphabet :: [String] -> Alphabet
-    parseAlphabet source = Alphabet $ source !! 1
+    parseAlphabet source = read $ source !! 1
     
     -- |Parses start state from source.
     parseStartState :: [String] -> State
