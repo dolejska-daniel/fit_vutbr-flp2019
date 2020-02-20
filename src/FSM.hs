@@ -11,6 +11,7 @@ module FSM (
     transitionFrom,
     transitionBy,
     transitionTo,
+    invalidRule,
     Delta,
     StateDelta,
     newDelta,
@@ -22,8 +23,11 @@ module FSM (
     acceptStates,
     ) where
     import Utils
+    import Data.Char
 
+    -- |Datatype for FSM input.
     type Input = Maybe Char
+    -- |Datatype for FSM's alphabet.
     newtype Alphabet = Alphabet [Input]
     instance Show Alphabet where
         show (Alphabet sigma) = s sigma "" where
@@ -33,14 +37,20 @@ module FSM (
     instance Read Alphabet where
         readsPrec _ str = [parse str []] where
             parse :: String -> [Input] -> (Alphabet, String)
+            -- | Parsing input is empty, finishing up...
             parse [] sigma = (Alphabet sigma, [])
-            parse (x:xs) sigma = parse xs (sigma ++ [(Just x)])
+            -- | Iterative parsing...
+            parse input@(x:xs) sigma 
+                | isAlpha x = parse xs (sigma ++ [(Just x)])
+                | otherwise = (Alphabet [], input)
     
     -- |Converts Alphabet instance back to list of Maybe Chars.
     unAlphabet :: Alphabet -> [Input]
     unAlphabet (Alphabet sigma) = sigma
 
+    -- |Datatype for single state.
     type State = Integer
+    -- |Datatype for states.
     data States = States [State]
     instance Show States where
         show (States list) = s list where
@@ -50,14 +60,21 @@ module FSM (
     instance Read States where
         readsPrec _ str = [parse str "" []] where
             parse :: String -> String -> [Integer] -> (States, String)
-            parse (',':xs) str acc = parse xs "" (appendAs acc str)
-            parse (x:xs) str acc = parse xs (str ++ [x]) acc
-            parse x str acc = (States (appendAs acc str), x)
+            -- | Parsing input is empty, finishing up...
+            parse input@[] str acc
+                | length str > 0 = parse input "" (appendAsInteger acc str)
+                | otherwise = (States acc, input)
+            -- | Iterative parsing...
+            parse input@(x:xs) str acc
+                | x == ',' = parse xs "" (appendAsInteger acc str)
+                | isDigit x = parse xs (str ++ [x]) acc
+                | otherwise = (States [], input)
     
     -- |Converts States instance back to list of rules.
     unStates :: States -> [State]
     unStates (States states) = states
     
+    -- |Datatype for single transition rule.
     newtype Rule = Rule (State, Input, State)
     instance Show Rule where
         show (Rule rule) = s rule where
@@ -67,13 +84,29 @@ module FSM (
     instance Read Rule where
         readsPrec _ str = [parse str "" Nothing []] where
             parse :: String -> String -> Input -> [Integer] -> (Rule, String)
-            parse (',':x:',':xs) str c acc = parse xs "" (Just x) (appendAs acc str)
-            parse (',':',':xs) str c acc = parse xs "" Nothing (appendAs acc str)
-            parse (x:xs) str c acc = parse xs (str ++ [x]) c acc
-            parse x str c acc = (Rule $ toTuple (appendAs acc str) c, x)
-            toTuple :: [Integer] -> Input -> (Integer, Input, Integer)
-            toTuple ints char = (ints !! 0, char, ints !! 1)
+            -- | Parsing input is empty, finishing up...
+            parse input@[] str c acc
+                | length str > 0 = parse input "" c (appendAsInteger acc str)
+                | otherwise = (Rule $ toTuple acc c, input)
+            -- | Parse input of transition rule.
+            parse input@(',':x:',':xs) str c acc
+                | isAlpha x = parse xs "" (Just x) (appendAsInteger acc str)
+                | otherwise = (invalidRule, input)
+            -- | Parse epsilon input of transition rule.
+            parse input@(',':',':xs) str c acc
+                | length str > 0 = parse xs "" Nothing (appendAsInteger acc str)
+                | otherwise = (invalidRule, input)
+            -- | Iterative parsing of states...
+            parse input@(x:xs) str c acc 
+                | isDigit x = parse xs (str ++ [x]) c acc
+                | otherwise = (invalidRule, input)
 
+            toTuple :: [Integer] -> Input -> (Integer, Input, Integer)
+            toTuple ints char 
+                | length ints == 2 = (ints !! 0, char, ints !! 1)
+                | otherwise = error "Failed to parse transition rules from provided input - transition rule malformed!"
+
+    -- |Datatype for transition rules.
     data Rules = Rules [Rule]
     instance Show Rules where
         show (Rules list) = s list where
@@ -86,14 +119,20 @@ module FSM (
     unRules :: Rules -> [Rule]
     unRules (Rules rules) = rules
 
+    -- |Accessor of first element in tuple.
     transitionFrom :: (a, b, c) -> a
     transitionFrom (s1, _, _) = s1
 
+    -- |Accessor of second element in tuple.
     transitionBy :: (a, b, c) -> b
     transitionBy (_, i, _) = i
 
+    -- |Accessor of third element in tuple.
     transitionTo :: (a, b, c) -> c
     transitionTo (_, _, s2) = s2
+
+    -- |Representation of invalid rule.
+    invalidRule = Rule (-1, Nothing, -1)
 
     -- |Transition function.
     type Delta = State -> Input -> States
@@ -103,6 +142,7 @@ module FSM (
     newDelta :: Rules -> Delta
     newDelta rules state input = States [ s | Rule (s0, i, s) <- unRules rules, s0 == state, i == input ]
     
+    -- |Structure describing finite-state machine.
     data FSM = FSM {
         states :: States,
         sigma :: Alphabet,
