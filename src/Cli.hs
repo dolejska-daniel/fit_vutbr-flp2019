@@ -17,16 +17,18 @@ module Cli (
                     -> Bool     -- ^ Return value
     isOptionPresent opt args
         | optExists ('-':opt:[]) args = True
-        | otherwise = False
-            where
-                optExists opt (x:xs) = if opt == x then True else optExists opt xs
-                optExists _ [] = False
+        | otherwise = False where
+            optExists opt (x:xs) = if opt == x
+                then True
+                else optExists opt xs
+            optExists _ [] = False
     
     -- |Determines which input source should be used and returns its contents.
     getInput :: [String]
              -> IO String
     getInput args
-        -- !! FIXME: empty args
+        -- | No CLI arguments were provided.
+        | args == [] = return ""
         -- | Source file is provided - loading source from given file.
         | not $ isOption (last args) = do
             source <- readFile (last args)

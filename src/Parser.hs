@@ -5,35 +5,59 @@ module Parser (
 
     -- |Parses FSM from source.
     parseFSM :: [String] -> FSM
-    parseFSM source = FSM states alphabet delta deltaRules startState acceptStates
-        where states = parseStates source
-              alphabet = parseAlphabet source
-              startState = parseStartState source
-              acceptStates = parseAcceptStates source
-              (delta, deltaRules) = parseDelta source
+    parseFSM source
+        -- | Input is definitely not valid.
+        | length source >= 5 = FSM states alphabet delta deltaRules startState acceptStates
+        -- | Input could be valid..try to process it.
+        | otherwise = error "Failed to parse FSM primitives - input malformed!" where
+            -- | Parse FSM primitives.
+            states = validate "states" $ parseStates source
+            alphabet = validate "alphabet" $ parseAlphabet source
+            startState = validate "start state" $ parseStartState source
+            acceptStates = validate "accept states" $ parseAcceptStates source
+            (delta, deltaRules) = validate "transition rules" $ parseDelta source
+            -- | Validate parsed inputs.
+            validate _ (Just input) = input
+            validate x Nothing = error ("Failed to parse " ++ x ++ " from provided input!")
     
     -- |Parses list of states from source.
-    parseStates :: [String] -> States
-    parseStates source = read $ source !! 0
-    
+    parseStates :: [String] -> Maybe States
+    parseStates source = case reads $ source !! 0 of
+        [(x, "")] -> Just x
+        _ -> Nothing
+
     -- |Parses input alphabet from source.
-    parseAlphabet :: [String] -> Alphabet
-    parseAlphabet source = read $ source !! 1
+    parseAlphabet :: [String] -> Maybe Alphabet
+    parseAlphabet source = case reads $ source !! 1 of
+        [(x, "")] -> Just x
+        _ -> Nothing
     
     -- |Parses start state from source.
-    parseStartState :: [String] -> State
-    parseStartState source = read $ source !! 2
+    parseStartState :: [String] -> Maybe State
+    parseStartState source = case reads $ source !! 2 of
+        [(x, "")] -> Just x
+        _ -> Nothing
     
     -- |Parses list of accept states from source.
-    parseAcceptStates :: [String] -> States
-    parseAcceptStates source = read $ source !! 3
+    parseAcceptStates :: [String] -> Maybe States
+    parseAcceptStates source = case reads $ source !! 3 of
+        [(x, "")] -> Just x
+        _ -> Nothing
     
     -- |Parses rules and transition function from source.
-    parseDelta :: [String] -> (Delta, Rules)
-    parseDelta source = createTuple $ Rules $ parseRules source where
-        createTuple rules = (newDelta rules, rules)
-        -- | Initial parse function
-        parseRules source = parseRules' (drop 4 source) []
+    parseDelta :: [String] -> Maybe (Delta, Rules)
+    parseDelta source = process $ parseRules (drop 4 source) [] where
+        process :: Maybe [Rule] -> Maybe (Delta, Rules)
+        process (Just rules) = Just (newDelta $ Rules rules, Rules rules)
+        process Nothing = Nothing
         -- | Rule parsing
-        parseRules' (x:xs) acc = parseRules' xs ((read x :: Rule) : acc)
-        parseRules' _ acc = reverse acc
+        parseRules :: [String] -> [Rule] -> Maybe [Rule]
+        parseRules (x:xs) acc = next $ parseRule x where
+            next Nothing = Nothing
+            next (Just rule) = parseRules xs (acc ++ [rule])
+        parseRules _ acc = Just $ reverse acc
+        -- | Parse single rule
+        parseRule :: String -> Maybe Rule
+        parseRule str = case reads str of
+            [(x, "")] -> Just x
+            _ -> Nothing

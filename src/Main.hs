@@ -5,12 +5,20 @@ import Parser
 import FSM
 import DFSM
 
+-- |Main program function.
 main :: IO ()
 main = do
+    -- Load and parse CLI arguments.
     args <- getArgs
     input <- getInput args
+    -- Declare shortcuts, process inputs.
     let source = lines input
-    let fsm = parseFSM source
-    when (isOptionPresent 'i' args) $ print fsm
-    when (isOptionPresent 't' args) $ print $ toDFSM fsm
+        fsm = parseFSM source
+        _i = isOptionPresent 'i' args
+        _t = isOptionPresent 't' args
+    -- Continue processing based on CLI args.
+    when ((not _i) && (not _t)) $ error "Either `-i` or `-t` option must be present!"
+    when _i $ print fsm
+    when _t $ print $ toDFSM fsm
+
     return ()
