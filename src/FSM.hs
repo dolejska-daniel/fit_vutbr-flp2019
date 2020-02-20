@@ -89,11 +89,11 @@ module FSM (
                 | length str > 0 = parse input "" c (appendAsInteger acc str)
                 | otherwise = (Rule $ toTuple acc c, input)
             -- | Parse input of transition rule.
-            parse input@(',':x:',':xs) str c acc
+            parse input@(',':x:',':xs) str _ acc
                 | isAlpha x = parse xs "" (Just x) (appendAsInteger acc str)
                 | otherwise = (invalidRule, input)
             -- | Parse epsilon input of transition rule.
-            parse input@(',':',':xs) str c acc
+            parse input@(',':',':xs) str _ acc
                 | length str > 0 = parse xs "" Nothing (appendAsInteger acc str)
                 | otherwise = (invalidRule, input)
             -- | Iterative parsing of states...
@@ -140,7 +140,7 @@ module FSM (
 
     -- |Constructs new transition function from transition rules.
     newDelta :: Rules -> Delta
-    newDelta rules state input = States [ s | Rule (s0, i, s) <- unRules rules, s0 == state, i == input ]
+    newDelta (Rules rules) state input = States [ s | Rule (s0, i, s) <- rules, s0 == state, i == input ]
     
     -- |Structure describing finite-state machine.
     data FSM = FSM {
@@ -152,4 +152,9 @@ module FSM (
         acceptStates :: States
     }
     instance Show FSM where
-        show (FSM q sigma delta rules q0 f) = show q ++ "\n" ++ show sigma ++ "\n" ++ show q0 ++ "\n" ++ show f ++ "\n" ++ show rules
+        show fsm = show q ++ "\n" ++ show s ++ "\n" ++ show q0 ++ "\n" ++ show f ++ "\n" ++ show rules where
+            q = (states fsm)
+            s = (sigma fsm)
+            q0 = (startState fsm)
+            f = (acceptStates fsm)
+            rules = (deltaRules fsm)

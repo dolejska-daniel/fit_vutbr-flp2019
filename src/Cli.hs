@@ -7,6 +7,7 @@ module Cli (
     -- |Determines whether provided String value is CLI option or not.
     isOption :: String -- ^ Possible CLI option
              -> Bool   -- ^ Return value
+    isOption [] = False
     isOption (x:_)
         | x == '-' = True
         | otherwise = False
@@ -15,8 +16,8 @@ module Cli (
     isOptionPresent :: Char     -- ^ Name of the option
                     -> [String] -- ^ Program CLI arguments
                     -> Bool     -- ^ Return value
-    isOptionPresent opt args
-        | optExists ('-':opt:[]) args = True
+    isOptionPresent c args
+        | optExists ('-':c:[]) args = True
         | otherwise = False where
             optExists opt (x:xs) = if opt == x
                 then True

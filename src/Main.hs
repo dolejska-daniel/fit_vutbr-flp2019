@@ -2,7 +2,6 @@ import System.Environment
 import Control.Monad
 import Cli
 import Parser
-import FSM
 import DFSM
 
 -- |Main program function.

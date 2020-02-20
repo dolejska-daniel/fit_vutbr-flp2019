@@ -21,7 +21,7 @@ module Utils (
     -- |Creates set from a list.
     unique :: Eq a => [a] -> [a]
     unique [] = []
-    unique (x:xs) = next xs [x] where
+    unique (a:bc) = next bc [a] where
         next (x:xs) acc = if contains acc x
             then next xs acc
             else next xs (x:acc)
@@ -41,8 +41,8 @@ module Utils (
 
     -- |Returns index of element in list.
     indexOf :: Eq a => [a] -> a -> Integer
-    indexOf x y = next x y 0 where
-        next [] y _ = error "Trying to find index of nonexistent element."
+    indexOf l m = next l m 0 where
+        next [] _ _ = error "Trying to find index of nonexistent element."
         next (x:xs) y i
             | x == y = i
             | otherwise = next xs y (i + 1)
