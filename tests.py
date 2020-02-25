@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 3:
     print("Expecting 2 arguments: executable binary, directory path/name.")
     exit(1)
 
@@ -87,6 +87,6 @@ def run_tests(executable_path, dir, depth=0):
         
         print("\t (" + desc + ")")
 
-executable_path = os.path.realpath(sys.argv[0])
-testdir = os.path.realpath(sys.argv[1])
+executable_path = os.path.realpath(sys.argv[1])
+testdir = os.path.realpath(sys.argv[2])
 run_tests(executable_path, testdir)
