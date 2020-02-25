@@ -1,0 +1,3 @@
+rka-2-dka.exe: Failed to parse alphabet from provided input!
+CallStack (from HasCallStack):
+  error, called at .\Parser.hs:23:34 in main:Parser

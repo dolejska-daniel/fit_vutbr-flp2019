@@ -1,6 +1,8 @@
+{-# LANGUAGE BangPatterns #-}
 module Parser (
     parseFSM,
     ) where
+    import Utils
     import FSM
 
     -- |Parses FSM from source.
@@ -13,12 +15,42 @@ module Parser (
             -- | Parse FSM primitives.
             states = validate "states" $ parseStates source
             alphabet = validate "alphabet" $ parseAlphabet source
-            startState = validate "start state" $ parseStartState source
-            acceptStates = validate "accept states" $ parseAcceptStates source
-            (delta, deltaRules) = validate "transition rules" $ parseDelta source
+            startState = checkStartState states $ validate "start state" $ parseStartState source
+            acceptStates = checkAcceptStates states $ validate "accept states" $ parseAcceptStates source
+            (!delta, !deltaRules) = checkRules states alphabet $ validate "transition rules" $ parseDelta source
             -- | Validate parsed inputs.
-            validate _ (Just input) = input
+            validate _ (Just input) = input 
             validate x Nothing = error ("Failed to parse " ++ x ++ " from provided input!")
+            -- | Validate transition rules.
+            checkRules states alphabet (delta, rules) = (delta, byStates states $ byAlphabet alphabet rules) where
+                byAlphabet :: Alphabet -> (Rules) -> Rules
+                byAlphabet (Alphabet a) (Rules r) = byAlphabet' a r (Rules r)
+                byAlphabet' :: [Input] -> [Rule] -> Rules -> Rules
+                byAlphabet' _ [] r = r
+                byAlphabet' a (Rule (_, i, _) : xs) r
+                    | i == Nothing = byAlphabet' a xs r
+                    | contains a i = byAlphabet' a xs r
+                    | otherwise = error "Input used in transition rule was not defiled as a valid input."
+                byStates :: States -> Rules -> Rules
+                byStates (States s) (Rules r) = byStates' s r (Rules r)
+                byStates' :: [State] -> [Rule] -> Rules -> Rules
+                byStates' _ [] r = r
+                byStates' s (Rule (s1, _, s2) : xs) r
+                    | contains s s1 && contains s s2 = byStates' s xs r
+                    | otherwise = error "State used in transition rule was not defined as a valid state."
+            -- | Validate FSM start state.
+            checkStartState :: States -> State -> State
+            checkStartState (States states) s
+                | contains states s = s
+                | otherwise = error "Start state was not defined as a valid state."
+            -- | Validate FSM accept states.
+            checkAcceptStates :: States -> States -> States
+            checkAcceptStates (States ss) (States ss') = checkAcceptStates' ss ss' (States ss')
+            checkAcceptStates' :: [State] -> [State] -> States -> States
+            checkAcceptStates' _ [] r = r
+            checkAcceptStates' states (x:xs) r
+                | contains states x = checkAcceptStates' states xs r
+                | otherwise = error "At least one of accept states was not defined as a valid state."
     
     -- |Parses list of states from source.
     parseStates :: [String] -> Maybe States

@@ -18,6 +18,6 @@ main = do
     -- Continue processing based on CLI args.
     when ((not _i) && (not _t)) $ error "Either `-i` or `-t` option must be present!"
     when _i $ print fsm
-    when _t $ print $ toDFSM fsm
+    when _t $ print $ toDFSM $! fsm
 
     return ()

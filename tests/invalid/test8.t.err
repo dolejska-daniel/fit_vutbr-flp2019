@@ -1,0 +1,3 @@
+rka-2-dka.exe: Input used in transition rule was not defiled as a valid input.
+CallStack (from HasCallStack):
+  error, called at .\Parser.hs:33:35 in main:Parser

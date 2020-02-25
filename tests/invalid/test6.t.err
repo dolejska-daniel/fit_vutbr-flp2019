@@ -1,0 +1,3 @@
+rka-2-dka.exe: At least one of accept states was not defined as a valid state.
+CallStack (from HasCallStack):
+  error, called at .\Parser.hs:53:31 in main:Parser

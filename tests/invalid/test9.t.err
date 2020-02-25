@@ -1,0 +1,3 @@
+rka-2-dka.exe: State used in transition rule was not defined as a valid state.
+CallStack (from HasCallStack):
+  error, called at .\Parser.hs:40:35 in main:Parser
